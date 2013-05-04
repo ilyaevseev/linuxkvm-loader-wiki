@@ -1,0 +1,90 @@
+#summary Пример настроек контейнера
+
+= Пример минимальных настроек =
+
+Структура каталогов:
+
+  * базовый каталог = /kvm
+  * общие настройки находятся в /kvm/etc
+  * настройки и образы дисков контейнеров находятся в /kvm/vm
+
+= Настройки контейнера =
+
+Файл настроек - /kvm/vm/*mydeb-123*.cfg:
+{{{
+parent = std_debian
+}}}
+  * Число из имени файла будет использовано как VMID для назначения MAC, IP и TAP-интерфейса.
+  * Образ диска будет взят из /kvm/vm/mydeb-123.*img*
+  * Все остальные настройки (в т.ч. базовый MAC и IP контейнеров) будут взяты из /kvm/*etc/vm/std_debian*.cfg и подключённых им профилей.
+Ещё один файл настроек - /kvm/vm/*mycentos-124*.cfg:
+{{{
+parent = std_centos
+}}}
+
+= Общие настройки =
+
+  * /kvm/etc/vm/std_debian.cfg -- для всех контейнеров с Дебианом, одинаковые на всех фермах
+  * /kvm/etc/vm/std_virtio.cfg -- для всех контейнеров с ОС, поддерживающими virtio, одинаковые на всех фермах
+  * /kvm/etc/vm/local.cfg -- настройки сети на конкретной ферме
+  * /kvm/etc/dhcp/`*` -- общая часть настроек для dnsmasq, обслуживающего контейнеры
+
+std_debian.cfg:
+{{{
+parent = std_virtio
+
+[common]
+ramsize = 512M
+}}}
+
+std_centos.cfg:
+{{{
+parent = std_virtio
+
+[common]
+ramsize = 1024M
+}}}
+
+std_virtio.cfg:
+{{{
+parent = local
+
+[drive0]
+image = auto
+flags = media=disk,cache=none,if=virtio
+
+[net0]
+model = virtio
+}}}
+
+local.cfg:
+{{{
+macbase = 00:16:3e:01:00:00
+netaddr = 10.20.30.0
+
+[net0]
+phys = eth0
+lantype = proxyarp
+}}}
+
+/kvm/etc/dhcp/dnsmasq.conf (имя файла роли не играет, т.к. dnsmasq читает все файлы из этого каталога):
+{{{
+dhcp-range=10.20.30.100,10.20.30.199
+dhcp-ignore=tag:!known
+except-interface=eth0
+}}}
+
+Для корректной работы ProxyARP на внешнем интерфейсе фермы (eth0) должен быть IP из сетки 10.20.30.0.
+
+= Запуск =
+{{{
+/kvm/bin/vmstart mydeb-123
+}}}
+
+= Проверка =
+{{{
+pgrep -fl kvm_123
+ip addr list dev tap123
+ip route list dev tap123
+/kvm/bin/vmconsole mydeb-123
+}}}
