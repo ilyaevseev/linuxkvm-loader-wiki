@@ -1,0 +1,56 @@
+#summary Инсталляция.
+
+= Инсталляция =
+
+=== 1. Устанавливаем пакеты ===
+{{{
+apt-get -y install kvm dnsmasq-base realpath libconfig-tiny-perl socat arping mercurial lsof
+}}}
+
+=== 2. Создаём каталоги ===
+{{{
+mkdir -p /kvm && cd /kvm
+mkdir -p bin etc/{,dhcp,vm} iso presets run/{,dhcp,monitor,net,vnc} vm
+}}}
+/kvm выбран для примера, можете использовать /opt/kvm, /var/lib/kvm и т.д.
+
+=== 3. Устанавливаем утилиты ===
+{{{
+hg clone http://code.google.com/p/linuxkvm-loader/ bin
+}}}
+
+=== 4. Добавляем в /etc/rc.local ===
+{{{
+(
+  /kvm/bin/netinit_onboot
+  /kvm/bin/vmstartall
+) &
+}}}
+Запускаем *netinit_onboot* немедленно, если хотим запускать контейнеры без перезагрузки фермы.
+
+=== 5. Генерируем базовый MAC-адрес для контейнеров ===
+{{{
+XEN_RESERVED="00:16:3e"
+printf '\nMAC base = %s:%02x:%02x:%02x\n' $XEN_RESERVED $[RANDOM % 128] $[RANDOM % 256] $[RANDOM % 256]
+}}}
+
+=== 6. Создаем общие настройки в /kvm/etc ===
+
+/kvm/etc/dhcp/dnsmasq.conf (10.20.30.`*` и eth0 заменяем на фактическую сеть фермы):
+{{{
+dhcp-range=10.20.30.100,10.20.30.199
+dhcp-ignore=tag:!known
+except-interface=eth0
+}}}
+
+/kvm/etc/vm/local.cfg (используем MAC-адрес с предыдущего шага):
+{{{
+macbase = 00:16:3e:01:00:00
+netaddr = 10.20.30.0
+
+[net0]
+phys = eth0
+lantype = proxyarp
+}}}
+
+См. также [MinimalConfigRu].
