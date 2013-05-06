@@ -1,0 +1,66 @@
+#summary Создание и использование пресетов.
+
+= Использование пресетов =
+
+Пресет - это образ диска с установленной операционной системой, дополнительными пакетами и готовыми настройками. Для создания новой ВМ достаточно (а) сделать новую копию данного файл-образа, (б) создать cfg-файл и (в) после запуска сменить в контейнере пароль суперпользователя.
+
+Пример:
+{{{
+cd /kvm/vm
+cp -n ../presets/debian6.img vm-123.img && 
+echo "parent = std_debian" > vm-123.cfg
+}}}
+
+= Создание пресета на примере Debian =
+
+1. Скачиваем инсталляционный ISO:
+{{{
+cd /kvm/iso
+wget http://mirror.yandex.ru/debian-cd/current/i386/iso-cd/debian-7.0.0-i386-netinst.iso
+}}}
+
+2. Создаем пустой образ диска:
+{{{
+cd /kvm/presets
+kvm-img create -f qcow2 debian7.img 50G
+}}}
+
+3. Создаем профиль для Debian в */kvm/etc/vm/std_debian.cfg*:
+{{{
+parent = std_virtio
+[common]
+ramsize = 512M
+}}}
+Подразумевается, что базовый профиль /kvm/etc/vm/*std_virtio.cfg* уже создан.<br> Подробнее про создание профилей см. [MinimalConfigRu] и [FullConfigRu].
+
+4. Создаем файл настроек для запуска пресета */kvm/vm/debian-preset-12.cfg*<br> (`*`.12 - выбранный для примера незанятый ip-адрес в сети фермы, который будет выдан контейнеру по dhcp):
+{{{
+parent = std_debian
+
+[drive0]
+image = PRESET_DIR:debian7.img
+
+[drive2]
+image = ISO_DIR:debian-7.0.0-i386-netinst.iso
+}}}
+
+5. Запускаем пресет и подключаемся к консоли по VNC:
+{{{
+/kvm/bin/vmstart debian-preset-12
+/kvm/bin/vmconsole debian-preset-12
+}}}
+
+6. Производим инсталляцию (сеть конфигурируется по dhcp!), перезагружаемся, попадаем в установленную систему.
+
+7. Cтавим дополнительные пакеты (openssh-server, sudo, ...), настраиваем.
+
+8. Чистим систему от запомненного состояния и лишних данных:
+{{{
+rm /etc/udev/rules.d/70-persistent-net.rules
+apt-get -y autoremove
+apt-get -y clean
+(...what more?)
+poweroff
+}}}
+
+9. Запрещаем автоматический запуск пресета -- переносим cfg-файл в другой каталог или добавляем в него строку "*runlevel = -100*".
