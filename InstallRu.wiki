@@ -4,7 +4,7 @@
 
 === 1. Устанавливаем пакеты ===
 {{{
-apt-get -y install kvm dnsmasq-base realpath libconfig-tiny-perl socat arping mercurial lsof
+apt-get -y install --no-install-recommends kvm dnsmasq-base realpath libconfig-tiny-perl socat arping mercurial lsof
 }}}
 
 === 2. Создаём каталоги ===
