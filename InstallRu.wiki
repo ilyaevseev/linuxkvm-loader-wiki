@@ -3,8 +3,21 @@
 = Инсталляция =
 
 === 1. Устанавливаем пакеты ===
+Debian/Ubuntu:
 {{{
 apt-get -y install --no-install-recommends kvm dnsmasq-base realpath libconfig-tiny-perl socat arping mercurial lsof
+}}}
+CentOS/Scientific Linux (потребуется [http://mirror.yandex.ru/epel/6/i386/repoview/epel-release.html EPEL]):
+{{{
+yum -y install qemu-kvm dnsmasq perl-Config-Tiny iputils mercurial lsof
+yum -y install --enablerepo=epel socat htop
+yum -y install --enablerepo=rpmforge realpath
+ln -s /usr/libexec/qemu-kvm /usr/bin/kvm
+}}}
+Прямая установка RPM для realpath без подключения RPMForge:
+{{{
+p=$(wget -qO- http://pkgs.repoforge.org/realpath/ | perl -ne '/"(realpath-.+\.el6\.rf\.'$(uname -m)'\.rpm)"/ and print "$1\n"')
+rpm -Uvh http://pkgs.repoforge.org/realpath/$p
 }}}
 
 === 2. Создаём каталоги ===
