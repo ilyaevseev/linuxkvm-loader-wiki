@@ -54,6 +54,8 @@ printf '\nMAC base = %s:%02x:%02x:%02x\n' $XEN_RESERVED $[RANDOM % 128] $[RANDOM
 dhcp-range=10.20.30.100,10.20.30.199
 dhcp-ignore=tag:!known
 except-interface=eth0
+except-interface=lo
+bind-interfaces
 }}}
 
 /kvm/etc/vm/local.cfg (используем MAC-адрес с предыдущего шага):
